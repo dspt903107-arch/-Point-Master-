@@ -26,10 +26,18 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(() => {
-    return localStorage.getItem('isAdmin') === 'true';
+    try {
+      return localStorage.getItem('isAdmin') === 'true';
+    } catch {
+      return false;
+    }
   });
   const [hasAdminAccess, setHasAdminAccess] = useState(() => {
-    return localStorage.getItem('hasAdminAccess') === 'true' || localStorage.getItem('isAdmin') === 'true';
+    try {
+      return localStorage.getItem('hasAdminAccess') === 'true' || localStorage.getItem('isAdmin') === 'true';
+    } catch {
+      return false;
+    }
   });
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
   const [studentList, setStudentList] = useState<Student[]>([]);
@@ -107,8 +115,10 @@ const App: React.FC = () => {
       await signOut(auth);
       setIsAdmin(false);
       setHasAdminAccess(false);
-      localStorage.removeItem('isAdmin');
-      localStorage.removeItem('hasAdminAccess');
+      try {
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('hasAdminAccess');
+      } catch {}
     } catch (e) {
       console.error("Logout error:", e);
     }
@@ -393,8 +403,10 @@ const App: React.FC = () => {
     if (adminPassword === ADMIN_PASSWORD) {
       setIsAdmin(true);
       setHasAdminAccess(true);
-      localStorage.setItem('isAdmin', 'true');
-      localStorage.setItem('hasAdminAccess', 'true');
+      try {
+        localStorage.setItem('isAdmin', 'true');
+        localStorage.setItem('hasAdminAccess', 'true');
+      } catch {}
       setIsLoginModalOpen(false);
       setAdminPassword('');
       showMessage('管理員登入成功');
@@ -531,11 +543,11 @@ const App: React.FC = () => {
                 onClick={() => {
                   if (isAdmin) {
                     setIsAdmin(false);
-                    localStorage.setItem('isAdmin', 'false');
+                    try { localStorage.setItem('isAdmin', 'false'); } catch {}
                   } else {
                     if (hasAdminAccess) {
                       setIsAdmin(true);
-                      localStorage.setItem('isAdmin', 'true');
+                      try { localStorage.setItem('isAdmin', 'true'); } catch {}
                     } else {
                       setIsLoginModalOpen(true);
                     }
