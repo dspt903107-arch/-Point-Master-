@@ -1,0 +1,5 @@
+{
+  "name": "Remix: 點數大師系統 (Point Master)",
+  "description": "一個專為班級設計的點數獎勵與卡牌收集系統，包含抽卡、合成、黑市交易與管理員後台。",
+  "requestFramePermissions": []
+}

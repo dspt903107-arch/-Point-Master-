@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "學生資料，包含點數、獎券與背包卡片。",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "學生姓名或座號" },
+        "points": { "type": "integer", "description": "目前點數" },
+        "draws": { "type": "integer", "description": "目前抽獎券數量" },
+        "inventory": { "type": "object", "description": "背包卡片，鍵為卡片名稱，值為數量" },
+        "doubleDraw": { "type": "boolean", "description": "是否發動買一送一效果" }
+      },
+      "required": ["name", "points", "draws", "inventory"]
+    },
+    "Log": {
+      "title": "Log",
+      "description": "系統操作紀錄",
+      "type": "object",
+      "properties": {
+        "targetId": { "type": "string", "description": "目標學生ID或SYSTEM" },
+        "action": { "type": "string", "description": "動作名稱" },
+        "detail": { "type": "string", "description": "詳細內容" },
+        "timestamp": { "type": "integer", "description": "發生時間戳記" }
+      },
+      "required": ["targetId", "action", "detail", "timestamp"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "班級挑戰任務",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string", "description": "任務內容" },
+        "reward": { "type": "string", "description": "獎勵描述" },
+        "timestamp": { "type": "integer", "description": "發布時間" }
+      },
+      "required": ["content", "reward", "timestamp"]
+    }
+  },
+  "firestore": {
+    "artifacts/point-master-v8/public/data/students/{studentId}": {
+      "schema": "Student",
+      "description": "學生個人資料"
+    },
+    "artifacts/point-master-v8/public/data/logs/{logId}": {
+      "schema": "Log",
+      "description": "系統日誌"
+    },
+    "artifacts/point-master-v8/public/data/tasks/current": {
+      "schema": "Task",
+      "description": "當前班級任務"
+    }
+  }
+}

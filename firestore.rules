@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: students
+    // Document ID: auto-generated or name-based
+    // Fields:
+    //   - name: string (required) - 學生姓名
+    //   - points: number (required) - 目前點數
+    //   - draws: number (required) - 目前抽獎券數量
+    //   - inventory: map (required) - 背包卡片
+    //   - doubleDraw: bool (optional) - 是否發動買一送一
+    //
+    // Collection: logs
+    // Document ID: auto-generated
+    // Fields:
+    //   - targetId: string (required) - 目標學生ID或SYSTEM
+    //   - action: string (required) - 動作名稱
+    //   - detail: string (required) - 詳細內容
+    //   - timestamp: number (required) - 發生時間戳記
+    //
+    // Collection: tasks
+    // Document ID: 'current'
+    // Fields:
+    //   - content: string (required) - 任務內容
+    //   - reward: string (required) - 獎勵描述
+    //   - timestamp: number (required) - 發布時間
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "dspt903107@ttct.edu.tw" && request.auth.token.email_verified == true));
+    }
+
+    function isValidStudent(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.points is number && data.points >= 0 &&
+             data.draws is number && data.draws >= 0 &&
+             (!('coins' in data) || (data.coins is number && data.coins >= 0)) &&
+             data.inventory is map &&
+             (!('doubleDraw' in data) || data.doubleDraw is bool) &&
+             (!('maxPointsReached' in data) || (data.maxPointsReached is number && data.maxPointsReached >= 0));
+    }
+
+    function isValidLog(data) {
+      return data.targetId is string && data.targetId.size() > 0 &&
+             data.action is string && data.action.size() > 0 &&
+             data.detail is string && data.detail.size() > 0 &&
+             data.timestamp is number;
+    }
+
+    function isValidTask(data) {
+      return data.content is string && data.content.size() > 0 &&
+             data.reward is string && data.reward.size() > 0 &&
+             data.timestamp is number;
+    }
+
+    // ===============================================================
+    // Match Blocks
+    // ===============================================================
+
+    match /artifacts/point-master-v8/public/data/students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidStudent(request.resource.data);
+      allow update: if isAuthenticated() && isValidStudent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /artifacts/point-master-v8/public/data/logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidLog(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /artifacts/point-master-v8/public/data/tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidTask(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
