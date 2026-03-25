@@ -72,27 +72,19 @@ service cloud.firestore {
     // ===============================================================
 
     match /artifacts/point-master-v8/public/data/students/{studentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin() && isValidStudent(request.resource.data);
-      allow update: if isAuthenticated() && isValidStudent(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /artifacts/point-master-v8/public/data/logs/{logId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidLog(request.resource.data);
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /artifacts/point-master-v8/public/data/tasks/{taskId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAdmin() && isValidTask(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }

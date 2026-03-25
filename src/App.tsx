@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, Plus, Trash2, Settings, User, BookOpen, Hammer, ShoppingCart, Sparkles, History, Target, ChevronRight } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -43,7 +42,6 @@ const App: React.FC = () => {
   const [studentList, setStudentList] = useState<Student[]>([]);
   const [logsList, setLogsList] = useState<Log[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<CardTier | 'ALL'>('ALL');
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [isBatchMode, setIsBatchMode] = useState(false);
@@ -84,49 +82,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     testConnection();
-
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (user.isAnonymous) {
-          await signOut(auth);
-          setIsAuthReady(false);
-        } else {
-          setIsAuthReady(true);
-        }
-      } else {
-        setIsAuthReady(false);
-      }
-    });
-
-    return () => unsubAuth();
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error("Auth error:", e);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setIsAdmin(false);
-      setHasAdminAccess(false);
-      try {
-        localStorage.removeItem('isAdmin');
-        localStorage.removeItem('hasAdminAccess');
-      } catch {}
-    } catch (e) {
-      console.error("Logout error:", e);
-    }
-  };
-
   useEffect(() => {
-    if (!isAuthReady) return;
-
     const unsubStudents = onSnapshot(studentsRef, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Student));
       list.sort((a, b) => a.id.localeCompare(b.id));
@@ -149,7 +107,7 @@ const App: React.FC = () => {
       unsubLogs();
       unsubTasks();
     };
-  }, [isAuthReady]);
+  }, []);
 
   const showMessage = (msg: string) => {
     // Simple alert for now, could be a toast
@@ -492,25 +450,6 @@ const App: React.FC = () => {
     showMessage('自訂任務發布成功');
   };
 
-  if (!isAuthReady) {
-    return (
-      <ErrorBoundary>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center">
-            <h1 className="text-3xl font-black text-teal-600 mb-6 italic tracking-tighter">✨ 點數大師</h1>
-            <p className="text-gray-600 mb-8 font-bold">請先登入以繼續使用系統</p>
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-lg hover:bg-teal-700 transition-colors"
-            >
-              使用 Google 登入
-            </button>
-          </div>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <datalist id="adjustment-reasons">
@@ -532,7 +471,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-black text-teal-600 italic tracking-tighter">✨ 點數大師</h1>
               <span className="hidden md:block text-[10px] bg-teal-50 px-3 py-1 rounded-full font-bold text-teal-600 border border-teal-100">
-                {isAuthReady ? "系統連線成功" : "系統連線中..."}
+                系統連線成功
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -556,12 +495,6 @@ const App: React.FC = () => {
                 className="text-xs px-4 py-2 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 shadow-md transition-all"
               >
                 {isAdmin ? '學生視角' : '後台管理'}
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="text-xs px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 shadow-sm transition-all ml-2"
-              >
-                登出
               </button>
             </div>
           </div>
